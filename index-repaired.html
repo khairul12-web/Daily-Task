@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>DAYLIST — Make today count</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+:root{--bg:#f4f6fa;--surface:#fff;--surface2:#f8f9fc;--ink:#182235;--muted:#8490a3;--line:#e8ecf2;--accent:#6c83f5;--accent2:#5169e8;--green:#29b781;--red:#ed6a78;--amber:#f0b64d;--shadow:0 12px 35px rgba(30,48,83,.06)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer;border:0}
+.app{min-height:100vh;display:grid;grid-template-columns:248px minmax(0,1fr)}
+.sidebar{background:var(--surface);border-right:1px solid var(--line);padding:26px 18px;display:flex;flex-direction:column;min-height:100vh;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 10px 28px}.brand-mark{width:36px;height:36px;border-radius:12px;background:linear-gradient(145deg,#8799ff,#5269e8);display:grid;place-items:center;color:white;font-weight:800;font-size:19px;box-shadow:0 7px 15px #6c83f544}.brand-name{font:800 19px Manrope;letter-spacing:.4px}.brand-sub{font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:1.1px}
+.nav-label{font-size:10px;font-weight:700;letter-spacing:1.4px;color:#a4adbb;padding:10px 12px 8px;text-transform:uppercase}
+.nav{display:flex;flex-direction:column;gap:4px}.nav-btn{display:flex;align-items:center;gap:12px;width:100%;padding:11px 12px;background:transparent;border-radius:11px;color:#68758a;text-align:left;font-size:14px;font-weight:600;transition:.15s}.nav-btn:hover{background:#f4f6fb}.nav-btn.active{background:#edf0ff;color:var(--accent2)}.nav-btn .ico{width:20px;text-align:center;font-size:17px}.count{margin-left:auto;font-size:11px;background:#eef1f6;padding:3px 7px;border-radius:7px;color:#8792a4}.nav-btn.active .count{background:#dfe5ff;color:#5269e8}
+.categories{margin-top:20px}.cat-item{display:flex;align-items:center;gap:10px;padding:9px 12px;color:#68758a;font-size:13px}.dot{width:8px;height:8px;border-radius:50%}.cat-item button{margin-left:auto;background:none;color:#9aa4b3}
+.sidebar-bottom{margin-top:auto}.profile{border-top:1px solid var(--line);padding:16px 8px 4px;display:flex;gap:10px;align-items:center}.avatar{width:34px;height:34px;border-radius:11px;background:#e9edff;color:#6175ef;display:grid;place-items:center;font-weight:700}.profile-name{font-size:13px;font-weight:700}.profile-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.main{padding:35px clamp(22px,4vw,56px) 60px;max-width:1500px;width:100%;margin:0 auto}.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:28px}.greeting small{color:var(--muted);font-size:13px}.greeting h1{font:800 clamp(25px,3vw,34px) Manrope;margin:7px 0 0;letter-spacing:-1px}.top-actions{display:flex;gap:9px;align-items:center}.icon-btn{width:40px;height:40px;border:1px solid var(--line);background:var(--surface);border-radius:12px;color:#748197;display:grid;place-items:center;font-size:17px}.primary{background:var(--accent);color:white;border-radius:12px;padding:11px 16px;font-weight:700;box-shadow:0 7px 16px #6c83f533;display:flex;align-items:center;gap:8px}.primary:hover{background:var(--accent2)}
+.hero{border-radius:20px;background:linear-gradient(120deg,#5e76ed,#8798ff);color:#fff;padding:24px 28px;display:flex;justify-content:space-between;align-items:center;gap:16px;overflow:hidden;position:relative;margin-bottom:24px}.hero:after{content:"";position:absolute;width:190px;height:190px;border:30px solid #ffffff16;border-radius:50%;right:7%;top:-75px}.hero h2{font:700 20px Manrope;margin:0 0 8px}.hero p{margin:0;color:#e9edff;font-size:13px}.hero-progress{min-width:160px;z-index:1}.progress-meta{display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;color:#edf0ff}.progress-track{height:7px;border-radius:20px;background:#ffffff44;overflow:hidden}.progress-fill{height:100%;background:#fff;border-radius:20px;width:0;transition:width .25s}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:17px 19px;display:flex;gap:13px;align-items:center}.stat-ico{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:18px}.stat strong{font:800 22px Manrope;display:block}.stat small{color:var(--muted);font-size:12px}
+.task-area{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:22px}.tasks-panel,.right-panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px}.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}.panel-heading h3{font:700 17px Manrope;margin:0}.filters{display:flex;gap:5px;background:#f4f6fa;padding:4px;border-radius:10px}.filter{padding:7px 10px;background:transparent;color:#8a95a5;border-radius:8px;font-size:12px;font-weight:600}.filter.active{background:#fff;color:var(--accent2);box-shadow:0 2px 5px #17223a0b}
+.task-list{display:flex;flex-direction:column;gap:8px}.task{border:1px solid var(--line);border-radius:13px;padding:13px 12px;display:flex;gap:11px;align-items:flex-start;transition:.15s}.task:hover{border-color:#d5dcf8;box-shadow:0 5px 14px #2e47800b}.task-check{width:19px;height:19px;border:1.8px solid #cbd3df;border-radius:6px;background:white;flex:none;margin-top:2px;display:grid;place-items:center;color:white;font-size:12px}.task.done .task-check{background:var(--green);border-color:var(--green)}.task.done .task-title{text-decoration:line-through;color:#9ba5b4}.task-content{flex:1;min-width:0}.task-title{font-weight:600;font-size:13px;line-height:1.4}.task-desc{font-size:12px;color:#98a2b2;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.task-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:8px}.tag{font-size:10px;font-weight:700;border-radius:6px;padding:4px 7px;background:#f2f4f8;color:#778398}.tag.priority-high{background:#fff0f1;color:#e05e6d}.tag.priority-medium{background:#fff6e5;color:#bd8a25}.tag.priority-low{background:#eaf8f2;color:#27a174}.tag.due{background:#eef2ff;color:#6376e9}.task-actions{display:flex;gap:3px}.task-actions button{background:none;color:#a2adba;padding:4px;border-radius:6px}.task-actions button:hover{background:#f3f5f9;color:#5c6b80}
+.empty{padding:36px 15px;text-align:center;color:#97a2b2}.empty .emoji{font-size:28px;margin-bottom:10px}.empty strong{display:block;color:#536076;margin-bottom:4px}
+.right-panel h3{font:700 16px Manrope;margin:0 0 15px}.calendar-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px;font-weight:700}.calendar-head button{background:none;color:#8d98a8;padding:5px}.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center}.calendar-grid span{font-size:10px;color:#9aa5b4;padding:6px 0}.calendar-day{border:0;background:transparent;border-radius:8px;padding:8px 0;font-size:11px;color:#536075}.calendar-day:hover{background:#f1f3f8}.calendar-day.selected{background:var(--accent);color:#fff}.calendar-day.today:not(.selected){color:var(--accent2);font-weight:800;background:#edf0ff}.calendar-day.has-task{position:relative}.calendar-day.has-task:after{content:"";width:3px;height:3px;background:var(--green);position:absolute;border-radius:50%;bottom:3px;left:50%;transform:translateX(-50%)}
+.quote{margin-top:21px;padding:14px;border-radius:13px;background:#f7f8fc;color:#758197;font-size:12px;line-height:1.6}.quote b{display:block;color:#536078;margin-bottom:5px}.quick-add{display:flex;gap:8px;margin-bottom:15px}.quick-add input{flex:1;min-width:0;border:1px solid var(--line);border-radius:11px;padding:11px 12px;outline:none;font-size:13px}.quick-add input:focus{border-color:#aab5ff;box-shadow:0 0 0 3px #8798ff1a}
+.searchbar{display:flex;gap:8px;margin-bottom:14px}.searchbar input{width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12px;outline:none}
+.modal-back{position:fixed;inset:0;background:#131d32a8;display:none;align-items:center;justify-content:center;padding:18px;z-index:30}.modal-back.open{display:flex}.modal{width:min(480px,100%);background:#fff;border-radius:20px;padding:24px;box-shadow:0 30px 80px #10182735}.modal h2{font:800 20px Manrope;margin:0 0 18px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:11px;color:#7e899b;font-weight:700}.field input,.field select,.field textarea{border:1px solid #e5e9f0;border-radius:10px;padding:10px 11px;outline:none;color:#263349;background:#fff}.field textarea{resize:vertical;min-height:65px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.secondary{background:#f2f4f8;color:#657188;padding:10px 14px;border-radius:10px;font-weight:700}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#182235;color:white;padding:11px 16px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:.2s;z-index:50}.toast.show{opacity:1}
+.auth-screen{position:fixed;inset:0;background:var(--bg);display:none;z-index:40;align-items:center;justify-content:center;padding:20px}.auth-screen.show{display:flex}.auth-card{width:min(420px,100%);background:#fff;border:1px solid var(--line);border-radius:22px;padding:30px;box-shadow:var(--shadow)}.auth-card .brand{padding:0 0 20px}.auth-card h2{font:800 22px Manrope;margin:0 0 8px}.auth-card p{font-size:13px;color:var(--muted);line-height:1.5;margin:0 0 18px}.auth-card input{width:100%;padding:12px;border:1px solid var(--line);border-radius:11px;margin:6px 0;outline:none}.auth-card .primary{justify-content:center;width:100%;margin-top:10px}.auth-toggle{text-align:center;font-size:12px;margin-top:15px;color:#8792a4}.auth-toggle button{background:none;color:var(--accent2);font-weight:700}.sync-status{font-size:11px;color:#8b96a6;display:flex;gap:6px;align-items:center}.sync-dot{width:7px;height:7px;border-radius:50%;background:#b5bfcc}.sync-dot.online{background:var(--green)}.sync-dot.demo{background:var(--amber)}
+.mobile-nav{display:none}
+@media(max-width:1050px){.task-area{grid-template-columns:1fr}.right-panel{display:none}}
+@media(max-width:760px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{padding:22px 15px 85px}.topbar{margin-bottom:20px}.hero{padding:20px;border-radius:17px}.hero-progress{min-width:120px}.stats{gap:8px}.stat{padding:13px 10px;gap:8px}.stat-ico{width:32px;height:32px;font-size:15px}.stat strong{font-size:19px}.stat small{font-size:10px}.tasks-panel{padding:15px}.panel-heading{align-items:flex-start;flex-direction:column}.mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom));justify-content:space-around;z-index:10}.mobile-nav button{background:none;color:#8792a4;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;padding:5px 9px}.mobile-nav button.active{color:var(--accent2)}.mobile-nav .mi{font-size:18px}.top-actions .primary{padding:10px 12px}.greeting h1{font-size:26px}.filters{width:100%;justify-content:space-between}.filter{flex:1}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="brand-mark">✓</div><div><div class="brand-name">DAYLIST</div><div class="brand-sub">MAKE TODAY COUNT</div></div></div>
+  <div class="nav-label">Workspace</div>
+  <nav class="nav">
+    <button class="nav-btn active" data-view="all"><span class="ico">▦</span> Overview <span class="count" id="count-all">0</span></button>
+    <button class="nav-btn" data-view="today"><span class="ico">☀</span> Today <span class="count" id="count-today">0</span></button>
+    <button class="nav-btn" data-view="upcoming"><span class="ico">◷</span> Upcoming</button>
+    <button class="nav-btn" data-view="completed"><span class="ico">✓</span> Completed</button>
+  </nav>
+  <div class="categories"><div class="nav-label">Categories</div>
+    <div class="cat-item"><span class="dot" style="background:#6d83f5"></span> Kuliah <button onclick="filterCategory('Kuliah')">›</button></div>
+    <div class="cat-item"><span class="dot" style="background:#29b781"></span> Organisasi <button onclick="filterCategory('Organisasi')">›</button></div>
+    <div class="cat-item"><span class="dot" style="background:#f0b64d"></span> Personal <button onclick="filterCategory('Personal')">›</button></div>
+    <div class="cat-item"><span class="dot" style="background:#e783b7"></span> Project <button onclick="filterCategory('Project')">›</button></div>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="sync-status" style="padding:0 10px 12px"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">Mode lokal</span></div>
+    <div class="profile"><div class="avatar" id="avatar">Z</div><div><div class="profile-name" id="profile-name">Zaki</div><div class="profile-sub" id="profile-sub">Personal workspace</div></div></div>
+  </div>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <div class="greeting"><small id="date-label">Hari ini</small><h1 id="greeting-title">Let's make it count ✨</h1></div>
+    <div class="top-actions"><button class="icon-btn" id="theme-btn" title="Toggle theme">☾</button><button class="primary" id="add-btn"><span>＋</span> New task</button></div>
+  </div>
+  <section class="hero">
+    <div><h2 id="hero-title">Small steps, big progress.</h2><p id="hero-sub">Satu tugas selesai adalah satu langkah maju.</p></div>
+    <div class="hero-progress"><div class="progress-meta"><span>Daily progress</span><b id="progress-text">0%</b></div><div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div></div>
+  </section>
+  <section class="stats">
+    <div class="stat"><div class="stat-ico" style="background:#edf0ff;color:#6479ef">☑</div><div><strong id="stat-total">0</strong><small>Total tasks</small></div></div>
+    <div class="stat"><div class="stat-ico" style="background:#e9f8f1;color:#27ad7a">✓</div><div><strong id="stat-done">0</strong><small>Completed</small></div></div>
+    <div class="stat"><div class="stat-ico" style="background:#fff5e6;color:#e0a335">◷</div><div><strong id="stat-pending">0</strong><small>To do</small></div></div>
+  </section>
+  <section class="task-area">
+    <div class="tasks-panel">
+      <div class="panel-heading"><h3 id="list-title">My tasks</h3><div class="filters"><button class="filter active" data-filter="all">All</button><button class="filter" data-filter="active">Active</button><button class="filter" data-filter="done">Done</button></div></div>
+      <div class="quick-add"><input id="quick-input" placeholder="Quick add a task... (Enter)" maxlength="120"><button class="primary" id="quick-add">＋</button></div>
+      <div class="searchbar"><input id="search-input" placeholder="⌕ Search tasks..."></div>
+      <div id="task-list" class="task-list"></div>
+    </div>
+    <aside class="right-panel">
+      <h3>Calendar</h3>
+      <div class="calendar-head"><button id="prev-month">‹</button><span id="month-label"></span><button id="next-month">›</button></div>
+      <div class="calendar-grid" id="calendar"></div>
+      <div class="quote"><b>✦ A little reminder</b>You don't have to do everything today. Just take the next small step.</div>
+    </aside>
+  </section>
+</main>
+</div>
+<nav class="mobile-nav">
+<button class="active" data-view="all"><span class="mi">▦</span>Home</button><button data-view="today"><span class="mi">☀</span>Today</button><button data-view="upcoming"><span class="mi">◷</span>Upcoming</button><button data-view="completed"><span class="mi">✓</span>Done</button>
+</nav>
+<div class="modal-back" id="modal-back">
+<div class="modal"><h2 id="modal-title">Create a task</h2><form id="task-form"><input type="hidden" id="task-id"><div class="form-grid">
+<div class="field full"><label>Task name *</label><input id="task-name" required maxlength="120" placeholder="What do you need to do?"></div>
+<div class="field full"><label>Notes (optional)</label><textarea id="task-notes" placeholder="Add a little detail..."></textarea></div>
+<div class="field"><label>Category</label><select id="task-category"><option>Kuliah</option><option>Organisasi</option><option>Personal</option><option>Project</option><option>Other</option></select></div>
+<div class="field"><label>Priority</label><select id="task-priority"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></div>
+<div class="field"><label>Due date</label><input type="date" id="task-date"></div>
+<div class="field"><label>Due time</label><input type="time" id="task-time"></div>
+</div><div class="modal-actions"><button type="button" class="secondary" id="cancel-btn">Cancel</button><button class="primary" type="submit">Save task</button></div></form></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="auth-screen" id="auth-screen"><div class="auth-card"><div class="brand"><div class="brand-mark">✓</div><div><div class="brand-name">DAYLIST</div><div class="brand-sub">MAKE TODAY COUNT</div></div></div><h2 id="auth-title">Your tasks, everywhere.</h2><p id="auth-desc">Sign in to sync your tasks between phone and laptop. Or keep using the local demo.</p><input type="email" id="auth-email" placeholder="Email address"><input type="password" id="auth-password" placeholder="Password (min. 6 characters)"><button class="primary" id="auth-submit">Sign in / Create account</button><div class="auth-toggle">Cloud sync is optional · <button id="demo-btn">Continue in demo mode</button></div></div></div>
+<script>
+/* DAYLIST — Add your Supabase project URL + anon key below to enable cloud sync. */
+const SUPABASE_URL = "https://nxqbtgxkspqovvmpteid.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_hyhQISZ7wogsIEEH708k2A_5cHwaIrM";
+let configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("YOUR_") && !SUPABASE_ANON_KEY.includes("YOUR_");
+let supabase = null;
+if (configured) {
+  try {
+    if (!window.supabase || !window.supabase.createClient) throw new Error("Supabase library did not load");
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch (err) {
+    console.error("Supabase initialization failed; running in demo mode:", err);
+    configured = false;
+    supabase = null;
+  }
+}
+const $ = id => document.getElementById(id);
+let tasks=[], user=null, view='all', filter='all', categoryFilter='', month=new Date(), selectedDate='', realtime=null, demo=false;
+const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const safe=(s='')=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const localKey='daylist_tasks_v1';
+function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2200)}
+function setSync(mode,label){$('sync-dot').className='sync-dot '+mode;$('sync-label').textContent=label}
+function getLocal(){try{return JSON.parse(localStorage.getItem(localKey)||'[]')}catch{return []}}
+function saveLocal(){localStorage.setItem(localKey,JSON.stringify(tasks))}
+function updateGreeting(){let h=new Date().getHours();$('greeting-title').textContent=(h<12?'Good morning':h<18?'Good afternoon':'Good evening')+', Zaki ✨';$('date-label').textContent=new Intl.DateTimeFormat('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date())}
+async function init(){
+ updateGreeting();tasks=getLocal();demo=!configured;setSync(configured?'':'demo',configured?'Connecting cloud…':'Demo · data on this device');
+ if(configured){const {data:{session}}=await supabase.auth.getSession();if(session){user=session.user;await loadCloud();setupRealtime();updateProfile()}else{$('auth-screen').classList.add('show');}}
+ render();calendar();
+ if(configured){supabase.auth.onAuthStateChange(async(event,session)=>{if(event==='SIGNED_IN'&&session){user=session.user;await loadCloud();setupRealtime();updateProfile();$('auth-screen').classList.remove('show');render();}if(event==='SIGNED_OUT'){user=null;tasks=getLocal();$('auth-screen').classList.add('show');render();}})}
+}
+async function loadCloud(){if(!user)return;const {data,error}=await supabase.from('tasks').select('*').order('created_at',{ascending:false});if(error){toast('Could not load cloud tasks');console.error(error);return}tasks=data.map(row=>({...row,id:row.id,taskName:row.title,title:row.title,notes:row.notes||'',category:row.category||'Personal',priority:row.priority||'medium',due_date:row.due_date||'',due_time:row.due_time||'',completed:row.completed,created_at:row.created_at}));saveLocal();setSync('online','Cloud synced');}
+function setupRealtime(){if(realtime)supabase.removeChannel(realtime);realtime=supabase.channel('daylist-tasks').on('postgres_changes',{event:'*',schema:'public',table:'tasks',filter:`user_id=eq.${user.id}`},async()=>{await loadCloud();render()}).subscribe(status=>{if(status==='SUBSCRIBED')setSync('online','Live sync active')})}
+function updateProfile(){$('profile-name').textContent=user?.email?.split('@')[0]||'Zaki';$('profile-sub').textContent=user?'Cloud account':'Personal workspace';$('avatar').textContent=(user?.email?.[0]||'Z').toUpperCase()}
+async function persist(task,action='upsert'){
+ if(configured&&user){let payload={user_id:user.id,title:task.title||task.taskName,notes:task.notes||'',category:task.category||'Personal',priority:task.priority||'medium',due_date:task.due_date||null,due_time:task.due_time||null,completed:!!task.completed};if(task.id)payload.id=task.id;
+ let res=action==='delete'?await supabase.from('tasks').delete().eq('id',task.id).eq('user_id',user.id):await supabase.from('tasks').upsert(payload);
+ if(res.error){toast('Sync error: '+res.error.message);console.error(res.error);return false}await loadCloud();return true
+ }else{saveLocal();return true}
+}
+function counts(){let all=tasks.length,done=tasks.filter(t=>t.completed).length,today=tasks.filter(t=>t.due_date===todayISO()&&!t.completed).length;return{all,done,today,pending:all-done}}
+function dateFmt(d){if(!d)return '';let date=new Date(d+'T00:00:00');return date.toLocaleDateString('id-ID',{day:'numeric',month:'short'})}
+function getVisible(){
+ let list=[...tasks];if(view==='today')list=list.filter(t=>t.due_date===todayISO());if(view==='upcoming')list=list.filter(t=>t.due_date&&t.due_date>todayISO()&&!t.completed);if(view==='completed')list=list.filter(t=>t.completed);if(categoryFilter)list=list.filter(t=>t.category===categoryFilter);if(filter==='active')list=list.filter(t=>!t.completed);if(filter==='done')list=list.filter(t=>t.completed);let q=$('search-input').value.toLowerCase().trim();if(q)list=list.filter(t=>(t.title||t.taskName||'').toLowerCase().includes(q)||(t.notes||'').toLowerCase().includes(q));if(selectedDate)list=list.filter(t=>t.due_date===selectedDate);list.sort((a,b)=>{if(a.completed!==b.completed)return a.completed?1:-1;let ad=a.due_date||'9999',bd=b.due_date||'9999';if(ad!==bd)return ad.localeCompare(bd);let p={high:0,medium:1,low:2};return(p[a.priority]||1)-(p[b.priority]||1)});return list}
+function render(){
+ let c=counts();$('count-all').textContent=c.all;$('count-today').textContent=c.today;$('stat-total').textContent=c.all;$('stat-done').textContent=c.done;$('stat-pending').textContent=c.pending;
+ let dayTasks=tasks.filter(t=>t.due_date===todayISO()), dayDone=dayTasks.filter(t=>t.completed).length, pct=dayTasks.length?Math.round(dayDone/dayTasks.length*100):0;$('progress-text').textContent=pct+'%';$('progress-fill').style.width=pct+'%';
+ $('hero-title').textContent=pct===100&&dayTasks.length?'You did it! 🎉':'Small steps, big progress.';$('hero-sub').textContent=dayTasks.length?`${dayDone} of ${dayTasks.length} tasks done today.`:'Satu tugas selesai adalah satu langkah maju.';
+ $('list-title').textContent=categoryFilter?categoryFilter+' tasks':selectedDate?`Tasks · ${dateFmt(selectedDate)}`:({today:'Today’s tasks',upcoming:'Upcoming tasks',completed:'Completed tasks',all:'My tasks'}[view]);
+ let list=getVisible();$('task-list').innerHTML=list.length?list.map(t=>`<div class="task ${t.completed?'done':''}" data-id="${safe(t.id)}"><button class="task-check" title="Mark complete">${t.completed?'✓':''}</button><div class="task-content"><div class="task-title">${safe(t.title||t.taskName)}</div>${t.notes?`<div class="task-desc">${safe(t.notes)}</div>`:''}<div class="task-meta"><span class="tag">${safe(t.category||'Personal')}</span><span class="tag priority-${safe(t.priority||'medium')}">${({high:'High priority',medium:'Medium',low:'Low'})[t.priority||'medium']}</span>${t.due_date?`<span class="tag due">◷ ${dateFmt(t.due_date)}${t.due_time?' · '+safe(t.due_time):''}</span>`:''}</div></div><div class="task-actions"><button class="edit" title="Edit">✎</button><button class="delete" title="Delete">×</button></div></div>`).join(''):`<div class="empty"><div class="emoji">🌱</div><strong>Nothing here yet</strong><span>Enjoy the clear space, or add a task to get started.</span></div>`;
+ $('task-list').querySelectorAll('.task').forEach(el=>{let id=el.dataset.id;el.querySelector('.task-check').onclick=()=>toggleTask(id);el.querySelector('.edit').onclick=()=>editTask(id);el.querySelector('.delete').onclick=()=>deleteTask(id)});
+ calendar();
+}
+function openModal(task){$('modal-back').classList.add('open');$('task-id').value=task?.id||'';$('task-name').value=task?.title||task?.taskName||'';$('task-notes').value=task?.notes||'';$('task-category').value=task?.category||'Kuliah';$('task-priority').value=task?.priority||'medium';$('task-date').value=task?.due_date||'';$('task-time').value=task?.due_time||'';$('modal-title').textContent=task?'Edit task':'Create a task';setTimeout(()=>$('task-name').focus(),50)}
+function closeModal(){$('modal-back').classList.remove('open')}
+async function addTask(title,extra={}){if(!title.trim())return;let task={id:crypto.randomUUID(),title:title.trim(),notes:extra.notes||'',category:extra.category||'Personal',priority:extra.priority||'medium',due_date:extra.due_date||'',due_time:extra.due_time||'',completed:false,created_at:new Date().toISOString()};tasks.unshift(task);saveLocal();render();let ok=await persist(task);if(ok)toast(configured&&user?'Task synced ✨':'Task added')}
+async function toggleTask(id){let t=tasks.find(x=>String(x.id)===String(id));if(!t)return;t.completed=!t.completed;render();await persist(t);toast(t.completed?'Nice work! ✨':'Task reopened')}
+function editTask(id){let t=tasks.find(x=>String(x.id)===String(id));if(t)openModal(t)}
+async function deleteTask(id){if(!confirm('Delete this task?'))return;let t=tasks.find(x=>String(x.id)===String(id));tasks=tasks.filter(x=>String(x.id)!==String(id));render();await persist(t,'delete');toast('Task deleted')}
+$('task-form').onsubmit=async e=>{e.preventDefault();let id=$('task-id').value;let data={title:$('task-name').value.trim(),notes:$('task-notes').value,category:$('task-category').value,priority:$('task-priority').value,due_date:$('task-date').value,due_time:$('task-time').value};if(id){let t=tasks.find(x=>String(x.id)===String(id));Object.assign(t,data);render();await persist(t);toast('Task updated')}else await addTask(data.title,data);closeModal()};
+$('add-btn').onclick=()=>openModal();$('cancel-btn').onclick=closeModal;$('modal-back').onclick=e=>{if(e.target===$('modal-back'))closeModal()};
+$('quick-add').onclick=()=>{let v=$('quick-input').value;addTask(v);$('quick-input').value=''};$('quick-input').onkeydown=e=>{if(e.key==='Enter')$('quick-add').click()};
+$('search-input').oninput=render;document.querySelectorAll('.filter').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x===b));render()});
+function setView(v){view=v;categoryFilter='';selectedDate='';document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));render()}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));function filterCategory(c){categoryFilter=c;view='all';selectedDate='';render()}
+function calendar(){let y=month.getFullYear(),m=month.getMonth(),first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();$('month-label').textContent=month.toLocaleDateString('id-ID',{month:'long',year:'numeric'});let heads=['M','S','S','R','K','J','S']; // use correct weekday sequence below
+let offset=(new Date(y,m,1).getDay()+6)%7;let html=['M','S','S','R','K','J','S'].map((_,i)=>`<span>${['S','S','R','K','J','S','M'][i]}</span>`).join('');
+// Monday-first headers
+html=['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(d=>`<span>${d}</span>`).join('');
+for(let i=0;i<offset;i++)html+='<span></span>';for(let d=1;d<=days;d++){let iso=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`,isToday=iso===todayISO(),has=tasks.some(t=>t.due_date===iso),sel=iso===selectedDate;html+=`<button class="calendar-day ${isToday?'today':''} ${has?'has-task':''} ${sel?'selected':''}" data-date="${iso}">${d}</button>`}
+$('calendar').innerHTML=html;$('calendar').querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>{selectedDate=selectedDate===b.dataset.date?'':b.dataset.date;view='all';categoryFilter='';render()})}
+$('prev-month').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()-1,1);calendar()};$('next-month').onclick=()=>{month=new Date(month.getFullYear(),month.getMonth()+1,1);calendar()};
+$('demo-btn').onclick=()=>{$('auth-screen').classList.remove('show');demo=true;tasks=getLocal();setSync('demo','Demo · data on this device');render();toast('Demo mode: local data only')};
+$('auth-submit').onclick=async()=>{if(!configured){toast('Cloud setup belum dilakukan — gunakan demo dulu');return}let email=$('auth-email').value,password=$('auth-password').value;if(!email||password.length<6){toast('Isi email dan password (min. 6 karakter)');return}let {data,error}=await supabase.auth.signInWithPassword({email,password});if(error){let sign=await supabase.auth.signUp({email,password});if(sign.error){toast(sign.error.message);return}if(sign.data.session){toast('Account created!');}else toast('Cek email untuk verifikasi, lalu sign in.');}else toast('Welcome back!')};
+$('theme-btn').onclick=()=>{document.body.classList.toggle('dark');let d=document.body.classList.contains('dark');document.documentElement.style.setProperty('--bg',d?'#111827':'#f4f6fa');document.documentElement.style.setProperty('--surface',d?'#1b2536':'#fff');document.documentElement.style.setProperty('--surface2',d?'#202c3e':'#f8f9fc');document.documentElement.style.setProperty('--ink',d?'#edf2fa':'#182235');document.documentElement.style.setProperty('--muted',d?'#a3afc1':'#8490a3');document.documentElement.style.setProperty('--line',d?'#2b3749':'#e8ecf2');document.documentElement.style.setProperty('--shadow',d?'0 12px 35px #0003':'0 12px 35px rgba(30,48,83,.06)');$('theme-btn').textContent=d?'☀':'☾';localStorage.setItem('daylist_theme',d?'dark':'light')};
+if(localStorage.getItem('daylist_theme')==='dark')$('theme-btn').click();
+init();
+if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body>
+</html>
